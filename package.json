@@ -9,7 +9,8 @@
   "dependencies": {
     "next": "9.3.4",
     "react": "16.13.1",
-    "react-dom": "16.13.1"
+    "react-dom": "16.13.1",
+    "use-hotkeys": "1.1.0"
   },
   "scripts": {
     "dev": "next",
