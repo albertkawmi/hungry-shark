@@ -1,5 +1,18 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
+import {
+  useGameState,
+  GameState,
+  GameDispatch,
+  SharkState,
+  MoveType,
+  FoodType,
+  SharkDirection,
+  FoodState,
+  Coords,
+} from '../lib/use-game-reducer';
+import { useInterval } from '../lib/use-interval';
+import useHotkeys from 'use-hotkeys';
 
 const colors = {
   black: 'black',
@@ -7,6 +20,7 @@ const colors = {
   green: 'lightseagreen',
   lightBlue: 'lightskyblue',
   white: 'white',
+  yellow: 'gold',
 };
 
 const isServer = typeof window === 'undefined';
@@ -20,21 +34,28 @@ function getAppHeight() {
 
 function getAppWidth() {
   if (isServer) return 0;
+
   const windowWidth = window.innerWidth;
   const windowHeight = window.innerHeight;
-  const windowRatio =
+
+  const appWidth =
     windowWidth < windowHeight
-      ? windowWidth / windowHeight
-      : windowHeight / windowWidth;
-  const appWidth = windowRatio * windowHeight;
+      ? windowWidth
+      : (windowHeight * windowHeight) / windowWidth;
+
   return appWidth;
 }
 
 export default () => {
-  const [hasMounted, setHasMounted] = React.useState(false);
-  React.useEffect(() => {
+  const [hasMounted, setHasMounted] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+
+  useEffect(() => {
     if (!hasMounted) {
-      setTimeout(() => setHasMounted(true), 2000);
+      setHasMounted(true);
+    }
+    if (!hasLoaded) {
+      setTimeout(() => setHasLoaded(true), 2000);
     }
   }, []);
 
@@ -76,19 +97,20 @@ export default () => {
         <title>Hungry Shark!</title>
       </Head>
 
-      <SplashScreen visible={!hasMounted} />
-      {!isServer && <Game />}
+      <SplashScreen visible={!hasLoaded} />
+      {hasMounted && <Game />}
 
       <style jsx global>{`
         * {
           box-sizing: border-box;
+          touch-action: manipulation;
+          font-family: 'Courier New', Courier, monospace;
+          text-transform: uppercase;
         }
         html,
         body {
           margin: 0;
           padding: 0;
-          font-family: 'Courier New', Courier, monospace;
-          text-transform: uppercase;
           background-color: ${colors.black};
         }
       `}</style>
@@ -97,12 +119,23 @@ export default () => {
 };
 
 const Game: React.FC = () => {
+  const [state, dispatch] = useGameState() as [GameState, GameDispatch];
+
+  useInterval(() => {
+    if (state.started) {
+      dispatch({ type: 'TICK' });
+    }
+  }, 1000);
+
+  if (state.timeRemaining === 0) {
+    return <GameOver state={state} dispatch={dispatch} />;
+  }
+
   return (
     <div className="Game">
-      <Header />
-      <GameGrid />
-      <DirectionPad onMove={d => console.log(d)} />
-      <Footer />
+      <Header {...state} />
+      <GameGrid state={state} dispatch={dispatch} />
+      <DirectionPad state={state} dispatch={dispatch} />
       <style jsx>{`
         .Game {
           margin: 0 auto;
@@ -112,6 +145,9 @@ const Game: React.FC = () => {
           flex-direction: column;
 
           background-color: ${colors.lightBlue};
+          background-image: url(/reef-bg.jpg);
+          background-position: bottom;
+          background-size: cover;
         }
       `}</style>
     </div>
@@ -121,7 +157,9 @@ const Game: React.FC = () => {
 const SplashScreen: React.FC<{ visible: boolean }> = ({ visible }) => (
   <div className={`SplashScreen ${visible ? '' : 'moved'}`}>
     <h1>Hungry Shark!</h1>
-    <img src="/emoji/shark.png" alt="Hungry Shark!" />
+    <div className="circle">
+      <img src="/emoji/shark.png" alt="Hungry Shark!" />
+    </div>
     <style jsx>{`
       .SplashScreen {
         position: absolute;
@@ -135,131 +173,358 @@ const SplashScreen: React.FC<{ visible: boolean }> = ({ visible }) => (
         justify-content: center;
         background-color: ${colors.green};
         transition: transform 250ms linear;
+        z-index: 100;
       }
       .moved {
         transform: translateX(-100vw);
       }
       h1 {
-        color: ${colors.white};
-        font-size: 2rem;
+        color: ${colors.yellow};
+        font-size: 3rem;
         text-align: center;
-        text-shadow: 1px 1px ${colors.black};
+        text-shadow: 3px 3px ${colors.black};
+        margin: 0;
+        padding: 1rem;
+      }
+      .circle {
+        background: ${colors.lightBlue};
+        border-radius: 50%;
+        padding: 3rem;
+        box-shadow: 8px 8px ${colors.black};
       }
       img {
-        background: ${colors.lightBlue};
-        padding: 3rem;
-        border-radius: 50%;
+        position: relative;
+        top: 8px;
+        right: 4px;
       }
     `}</style>
   </div>
 );
 
-const Header = () => {
+const Header: React.FC<GameState> = ({ score, timeRemaining }) => {
   return (
     <header className="Header">
       <h1>Hungry Shark!</h1>
-      <span>Score: 0</span>
+      <span className="timer">Time: {timeRemaining}</span>
+      <span className="score">Score: {score}</span>
       <style jsx>{`
         h1,
-        span {
+        .score,
+        .timer {
           margin: 0;
           font-size: 0.875rem;
-          text-shadow: 1px 1px ${colors.lightBlue};
+          font-weight: bold;
+          text-shadow: 1px 1px ${colors.brown};
+          color: ${colors.black};
         }
         .Header {
           display: flex;
           justify-content: space-between;
           padding: 1px 2px;
-          background-color: ${colors.white};
-          border-bottom: dotted 2px ${colors.lightBlue};
+          background: white;
+          background: rgba(255, 255, 255, 0.6);
         }
       `}</style>
     </header>
   );
 };
 
-const GameGrid = () => {
+interface StateAndDispatch {
+  state: GameState;
+  dispatch: GameDispatch;
+}
+
+const GameGrid: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
   return (
     <main className="GameGrid">
+      {!state.started && (
+        <button onClick={() => dispatch({ type: 'START' })}>
+          Tap to start!
+        </button>
+      )}
+      <Shark {...state.shark} />
+      {state.food.map((f: FoodState, i) => (
+        <Sealife key={f.id} {...f} />
+      ))}
       <style jsx>{`
         .GameGrid {
           height: ${getAppWidth()}px;
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        }
+        button {
+          border: 0;
+          background-color: ${colors.lightBlue};
+          padding: 0.5rem;
+          color: ${colors.white};
+          font-size: 1rem;
+          font-weight: bold;
+          border-radius: 3px;
+          opacity: 0.3;
         }
       `}</style>
     </main>
   );
 };
 
-enum Direction {
-  UP = 'UP',
-  LEFT = 'LEFT',
-  DOWN = 'DOWN',
-  RIGHT = 'RIGHT',
+const GameOver: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
+  const [highScore, setHighScore] = useState(0);
+  const [showButton, setShowButton] = useState(false);
+
+  useEffect(() => {
+    try {
+      const previousHighScore = JSON.parse(
+        window.localStorage.getItem('highScore')
+      );
+      if (state.score > previousHighScore) {
+        window.localStorage.setItem('highScore', JSON.stringify(state.score));
+        setHighScore(state.score);
+      } else {
+        setHighScore(previousHighScore);
+      }
+    } catch (e) {
+      console.error(e);
+      setHighScore(0);
+    } finally {
+      setTimeout(() => setShowButton(true), 1000);
+    }
+  }, []);
+
+  return (
+    <div className="GameOver">
+      <h2>Time's up!</h2>
+      <p>You scored</p>
+      <p className="scored">{state.score}</p>
+      <p>Points</p>
+      {highScore > state.score ? (
+        <h3>
+          Your high score is <span className="high-score">{highScore}</span>
+        </h3>
+      ) : (
+        <h3>That's a new high score!</h3>
+      )}
+      <button
+        className={showButton ? 'visible' : 'hidden'}
+        onClick={() => dispatch({ type: 'INIT' })}
+        disabled={!showButton}
+      >
+        Still hungry?
+      </button>
+      <style jsx>{`
+        .GameOver {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background-color: ${colors.green};
+          transition: transform 250ms linear;
+          z-index: 100;
+        }
+        p,
+        h2,
+        h3 {
+          margin: 0;
+          margin-bottom: 1rem;
+        }
+        h2,
+        h3 {
+          color: ${colors.white};
+          text-align: center;
+        }
+        h2 {
+          text-shadow: 3px 3px ${colors.black};
+          font-size: 3rem;
+        }
+        h3 {
+          text-shadow: 1px 1px ${colors.black};
+        }
+        .scored {
+          font-size: 4rem;
+          color: ${colors.yellow};
+          text-shadow: 3px 3px ${colors.black};
+          margin: 0;
+          font-weight: bold;
+          animation: pulse 1s infinite;
+        }
+        .high-score {
+          color: ${colors.yellow};
+        }
+        button {
+          border: 0;
+          background-color: ${colors.yellow};
+          padding: 1rem;
+          color: ${colors.green};
+          box-shadow: 2px 2px ${colors.black};
+          text-shadow: 1px 1px ${colors.black};
+          font-size: 1.5rem;
+          font-weight: bold;
+          border-radius: 3px;
+          transition: opacity 1s ease-in;
+        }
+        .visible {
+          opacity: 1;
+        }
+        .hidden {
+          opacity: 0;
+        }
+        @keyframes pulse {
+          0% {
+            transform: scale(0.8);
+          }
+          50% {
+            transform: scale(1.2);
+          }
+          100% {
+            transform: scale(0.8);
+          }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+const Shark: React.FC<SharkState> = ({ x, y, facing }) => (
+  <Sealife {...{ x, y, facing }} type="shark" />
+);
+
+interface SealifeProps extends Coords {
+  facing?: SharkDirection;
+  id?: string;
+  type: FoodType | 'shark';
 }
 
-const DirectionPad: React.FC<{ onMove: (direction: Direction) => void }> = ({
-  onMove,
-}) => {
+const Sealife: React.FC<SealifeProps> = ({ x, y, facing, type }) => (
+  <React.Fragment>
+    <img
+      className={facing === 'right' ? 'facing-right' : 'facing-left'}
+      src={`/emoji/${type}.png`}
+      alt={type}
+      style={{ top: (y * getAppWidth()) / 10, left: (x * getAppWidth()) / 10 }}
+    />
+    <style jsx>{`
+      img {
+        position: absolute;
+        width: ${getWidthForType(type)}px;
+        transition: top 250ms ease-out, left 250ms ease-out;
+      }
+      .facing-left {
+        transform: scale(1);
+        animation: pulseLeft 1s infinite;
+      }
+      .facing-right {
+        transform: scale(-1, 1);
+        animation: pulseRight 1s infinite;
+      }
+      @keyframes pulseLeft {
+        0% {
+          transform: scale(0.9);
+        }
+        50% {
+          transform: scale(1);
+        }
+        100% {
+          transform: scale(0.9);
+        }
+      }
+
+      @keyframes pulseRight {
+        0% {
+          transform: scale(-1, 0.9);
+        }
+        50% {
+          transform: scale(-1, 1);
+        }
+        100% {
+          transform: scale(-1, 0.9);
+        }
+      }
+    `}</style>
+  </React.Fragment>
+);
+
+function getWidthForType(type: FoodType | 'shark') {
+  const appWidth = getAppWidth();
+  switch (type) {
+    case 'shark':
+      return appWidth / 10;
+    default:
+      return appWidth / 14;
+  }
+}
+
+type ArrowKey = 'up' | 'down' | 'left' | 'right';
+
+const DirectionPad: React.FC<StateAndDispatch> = ({ dispatch }) => {
+  const arrowKeys: ArrowKey[] = ['up', 'down', 'left', 'right'];
+  useHotkeys(keyMovement, arrowKeys);
+
+  const move = (direction: MoveType) => (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    dispatch({ type: direction });
+  };
+
+  function keyMovement(key: ArrowKey) {
+    if (key === 'up') dispatch({ type: 'MOVE_UP' });
+    if (key === 'down') dispatch({ type: 'MOVE_DOWN' });
+    if (key === 'left') dispatch({ type: 'MOVE_LEFT' });
+    if (key === 'right') dispatch({ type: 'MOVE_RIGHT' });
+  }
+
+  const buttonSpacing = 8;
+  const headerHeight = 16;
+  const dPadHeight = getAppHeight() - getAppWidth() - headerHeight;
+  const dPadPadding = 8;
+  const buttonWidth = (dPadHeight - 2 * buttonSpacing - 2 * dPadPadding) / 2;
+
   return (
     <nav className="DirectionPad">
       <div>
-        <img
-          role="button"
-          onClick={() => onMove(Direction.UP)}
-          src="/emoji/up.png"
-          alt="Up"
-        />
+        <img src="/emoji/up.png" onClick={move('MOVE_UP')} alt="Move up" />
       </div>
       <div>
         <img
-          role="button"
-          onClick={() => onMove(Direction.LEFT)}
           src="/emoji/left.png"
-          alt="Left"
+          onClick={move('MOVE_LEFT')}
+          alt="Move left"
         />
         <img
-          role="button"
-          onClick={() => onMove(Direction.DOWN)}
           src="/emoji/down.png"
-          alt="Down"
+          onClick={move('MOVE_DOWN')}
+          alt="Move down"
         />
         <img
-          role="button"
-          onClick={() => onMove(Direction.RIGHT)}
           src="/emoji/right.png"
-          alt="Right"
+          onClick={move('MOVE_RIGHT')}
+          alt="Move right"
         />
       </div>
       <style jsx>{`
         .DirectionPad {
           flex: 1;
-          padding-top: 0.5rem;
-          background-color: ${colors.brown};
+          padding-top: ${buttonSpacing}px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          opacity: 0.8;
         }
         img {
-          width: ${getAppWidth() / 10}px;
-          margin: 4px 4px 0 4px;
+          width: ${buttonWidth}px;
+          max-width: 4rem;
+          margin: 0 ${buttonSpacing}px;
         }
         div {
           text-align: center;
+          margin-bottom: ${buttonSpacing}px;
         }
       `}</style>
     </nav>
-  );
-};
-
-const Footer = () => {
-  return (
-    <footer className="Footer">
-      <button>High Scores</button>
-      <button>Play/Pause</button>
-      <button>Start Again</button>
-      <button>Game Settings</button>
-      <style jsx>{`
-        .Footer {
-          background-color: ${colors.white};
-        }
-      `}</style>
-    </footer>
   );
 };
