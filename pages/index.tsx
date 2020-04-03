@@ -263,7 +263,7 @@ const GameGrid: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
           font-size: 1rem;
           font-weight: bold;
           border-radius: 3px;
-          opacity: 0.3;
+          opacity: 0.4;
         }
       `}</style>
     </main>
@@ -367,7 +367,7 @@ const GameOver: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
           font-size: 1.5rem;
           font-weight: bold;
           border-radius: 3px;
-          transition: opacity 1s ease-in;
+          transition: opacity 2s ease-in;
         }
         .visible {
           opacity: 1;
@@ -377,13 +377,13 @@ const GameOver: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
         }
         @keyframes pulse {
           0% {
-            transform: scale(0.8);
+            transform: scale(0.9);
           }
           50% {
-            transform: scale(1.2);
+            transform: scale(1.1);
           }
           100% {
-            transform: scale(0.8);
+            transform: scale(0.9);
           }
         }
       `}</style>
