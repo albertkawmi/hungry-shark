@@ -116,6 +116,37 @@ export default () => {
           padding: 0;
           background-color: ${colors.black};
         }
+        .pulsate {
+          transform: scale(1);
+          animation: pulsate 1s infinite;
+        }
+        .pulsate-flipped {
+          transform: scale(-1, 1);
+          animation: pulsateFlipped 1s infinite;
+        }
+        @keyframes pulsate {
+          0% {
+            transform: scale(0.9);
+          }
+          50% {
+            transform: scale(1);
+          }
+          100% {
+            transform: scale(0.9);
+          }
+        }
+
+        @keyframes pulsateFlipped {
+          0% {
+            transform: scale(-1, 0.9);
+          }
+          50% {
+            transform: scale(-1, 1);
+          }
+          100% {
+            transform: scale(-1, 0.9);
+          }
+        }
       `}</style>
     </React.Fragment>
   );
@@ -299,7 +330,7 @@ const GameOver: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
     <div className="GameOver">
       <h2>Time's up!</h2>
       <p>You scored</p>
-      <p className="scored">{state.score}</p>
+      <p className="scored pulsate">{state.score}</p>
       <p>Points</p>
       {highScore > state.score ? (
         <h3>
@@ -354,7 +385,6 @@ const GameOver: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
           text-shadow: 3px 3px ${colors.black};
           margin: 0;
           font-weight: bold;
-          animation: pulse 1s infinite;
         }
         .high-score {
           color: ${colors.yellow};
@@ -377,17 +407,6 @@ const GameOver: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
         .hidden {
           opacity: 0;
         }
-        @keyframes pulse {
-          0% {
-            transform: scale(0.9);
-          }
-          50% {
-            transform: scale(1.1);
-          }
-          100% {
-            transform: scale(0.9);
-          }
-        }
       `}</style>
     </div>
   );
@@ -406,7 +425,7 @@ interface SealifeProps extends Coords {
 const Sealife: React.FC<SealifeProps> = ({ x, y, facing, type }) => (
   <React.Fragment>
     <img
-      className={facing === 'right' ? 'facing-right' : 'facing-left'}
+      className={facing === 'right' ? 'pulsate-flipped' : 'pulsate'}
       src={`/emoji/${type}.png`}
       alt={type}
       style={{ top: (y * getAppWidth()) / 10, left: (x * getAppWidth()) / 10 }}
@@ -415,38 +434,7 @@ const Sealife: React.FC<SealifeProps> = ({ x, y, facing, type }) => (
       img {
         position: absolute;
         width: ${getWidthForType(type)}px;
-        transition: top 250ms ease-out, left 250ms ease-out;
-      }
-      .facing-left {
-        transform: scale(1);
-        animation: pulseLeft 1s infinite;
-      }
-      .facing-right {
-        transform: scale(-1, 1);
-        animation: pulseRight 1s infinite;
-      }
-      @keyframes pulseLeft {
-        0% {
-          transform: scale(0.9);
-        }
-        50% {
-          transform: scale(1);
-        }
-        100% {
-          transform: scale(0.9);
-        }
-      }
-
-      @keyframes pulseRight {
-        0% {
-          transform: scale(-1, 0.9);
-        }
-        50% {
-          transform: scale(-1, 1);
-        }
-        100% {
-          transform: scale(-1, 0.9);
-        }
+        transition: top 200ms ease-out, left 200ms ease-out;
       }
     `}</style>
   </React.Fragment>
