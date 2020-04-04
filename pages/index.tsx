@@ -19,6 +19,7 @@ const colors = {
   brown: '#a5742b',
   green: 'lightseagreen',
   lightBlue: 'lightskyblue',
+  lightBlueFaded: 'rgba(135, 206, 250, 0.25)',
   white: 'white',
   yellow: 'gold',
 };
@@ -238,9 +239,7 @@ const GameGrid: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
   return (
     <main className="GameGrid">
       {!state.started && (
-        <button onClick={() => dispatch({ type: 'START' })}>
-          Tap to start!
-        </button>
+        <button onClick={() => dispatch({ type: 'START' })}>Ready</button>
       )}
       <Shark {...state.shark} />
       {state.food.map((f: FoodState, i) => (
@@ -257,13 +256,14 @@ const GameGrid: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
         }
         button {
           border: 0;
-          background-color: ${colors.lightBlue};
-          padding: 0.5rem;
+          background-color: ${colors.lightBlueFaded};
+          padding: 1rem;
           color: ${colors.white};
-          font-size: 1rem;
+          font-size: 1.5rem;
           font-weight: bold;
           border-radius: 3px;
-          opacity: 0.4;
+          opacity: 0.8;
+          text-shadow: 1px 1px ${colors.black};
         }
       `}</style>
     </main>
@@ -478,47 +478,50 @@ const DirectionPad: React.FC<StateAndDispatch> = ({ dispatch }) => {
     if (key === 'right') dispatch({ type: 'MOVE_RIGHT' });
   }
 
-  const buttonSpacing = 8;
+  const buttonSpacing = 12;
   const headerHeight = 16;
   const dPadHeight = getAppHeight() - getAppWidth() - headerHeight;
   const dPadPadding = 8;
-  const buttonWidth = (dPadHeight - 2 * buttonSpacing - 2 * dPadPadding) / 2;
+  const buttonWidth = (dPadHeight - 3 * buttonSpacing - 2 * dPadPadding) / 2;
 
   return (
     <nav className="DirectionPad">
       <div>
-        <img src="/emoji/up.png" onClick={move('MOVE_UP')} alt="Move up" />
+        <button onClick={move('MOVE_UP')}>
+          <img src="/emoji/up.png" alt="Move up" />
+        </button>
       </div>
       <div>
-        <img
-          src="/emoji/left.png"
-          onClick={move('MOVE_LEFT')}
-          alt="Move left"
-        />
-        <img
-          src="/emoji/down.png"
-          onClick={move('MOVE_DOWN')}
-          alt="Move down"
-        />
-        <img
-          src="/emoji/right.png"
-          onClick={move('MOVE_RIGHT')}
-          alt="Move right"
-        />
+        <button onClick={move('MOVE_LEFT')}>
+          <img src="/emoji/left.png" alt="Move left" />
+        </button>
+        <button onClick={move('MOVE_DOWN')}>
+          <img src="/emoji/down.png" alt="Move down" />
+        </button>
+        <button onClick={move('MOVE_RIGHT')}>
+          <img src="/emoji/right.png" alt="Move right" />
+        </button>
       </div>
       <style jsx>{`
         .DirectionPad {
           flex: 1;
           padding-top: ${buttonSpacing}px;
+          padding-bottom: ${2 * buttonSpacing}px;
           display: flex;
           flex-direction: column;
           justify-content: center;
           opacity: 0.8;
         }
-        img {
+        button {
+          background: none;
+          border: 0;
+          padding: 0;
+          margin: 0 ${buttonSpacing}px;
           width: ${buttonWidth}px;
           max-width: 4rem;
-          margin: 0 ${buttonSpacing}px;
+        }
+        img {
+          width: 100%;
         }
         div {
           text-align: center;
