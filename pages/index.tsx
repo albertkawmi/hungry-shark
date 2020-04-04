@@ -104,9 +104,11 @@ export default () => {
       <style jsx global>{`
         * {
           box-sizing: border-box;
-          touch-action: manipulation;
           font-family: 'Courier New', Courier, monospace;
           text-transform: uppercase;
+          touch-action: manipulation !important;
+          -webkit-touch-callout: none !important;
+          user-select: none !important;
         }
         html,
         body {
