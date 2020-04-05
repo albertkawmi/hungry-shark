@@ -18,8 +18,7 @@ export type FoodType =
   | 'octopus'
   | 'shrimp'
   | 'squid'
-  | 'tropical-fish'
-  | 'eaten';
+  | 'tropical-fish';
 
 export interface FoodState extends Coords {
   id: string;
@@ -79,58 +78,52 @@ function gameReducer(state: GameState, action: Action): GameState {
     return initialState;
   }
 
+  // pause game if time runs out
   if (state.timeRemaining === 0) {
     return state;
   }
 
+  // update shark position
   const nextShark = sharkReducer(state.shark, action);
 
-  const movedFood = state.food
-    .map(action.type === 'TICK' ? moveFoodToTheLeft : doNothing)
-    .filter((food) => food.x >= 0);
+  // update food position on each TICK
+  const movedFood =
+    action.type === 'TICK' ? state.food.map(moveFoodToTheLeft) : state.food;
 
+  // only keep food that was not eaten
   const survivingFood = movedFood.filter(
     (food) => food.x !== nextShark.x || food.y !== nextShark.y
   );
 
-  const nextFood = survivingFood.concat(
-    survivingFood.length < 6
-      ? [
-          newFood(
-            allSlots.filter((slot) => {
-              if (nextShark.x === 9 && nextShark.y === slot) {
-                return false;
-              }
-              if (
-                survivingFood.some((food) => food.x === 9 && food.y === slot)
-              ) {
-                return false;
-              }
-              return true;
-            })
-          ),
-        ]
-      : []
-  );
+  // remove food that is now off the grid
+  const foodStillOnScreen = survivingFood.filter((food) => food.x >= 0);
 
+  // spawn more food if needed
+  const respawnedFood =
+    foodStillOnScreen.length < 6
+      ? [newFood(availableSlotsForNewFood(nextShark, foodStillOnScreen))]
+      : [];
+
+  const nextFood = foodStillOnScreen.concat(respawnedFood);
+
+  // calculate score
   const foodEaten = state.food.length - survivingFood.length;
+  const nextScore = state.score + foodEaten;
 
-  const score = state.score + foodEaten;
-
-  const timeRemaining =
+  // time remaining
+  const nextTimeRemaining =
     action.type === 'TICK' ? state.timeRemaining - 1 : state.timeRemaining;
 
-  const started = Boolean(timeRemaining);
+  // state.started is semantically clearer than timeRemaining !== 0
+  const nextStarted = Boolean(nextTimeRemaining);
 
-  const nextState: GameState = {
+  return {
     shark: nextShark,
     food: nextFood,
-    score,
-    timeRemaining,
-    started,
+    score: nextScore,
+    timeRemaining: nextTimeRemaining,
+    started: nextStarted,
   };
-
-  return nextState;
 }
 
 function sharkReducer(sharkState: SharkState, action: Action): SharkState {
@@ -171,8 +164,19 @@ function moveFoodToTheLeft(food: FoodState): FoodState {
   };
 }
 
-function doNothing(f: any): any {
-  return f;
+function availableSlotsForNewFood(
+  nextShark: SharkState,
+  foodStillOnScreen: FoodState[]
+): number[] {
+  return allSlots.filter((slot) => {
+    if (nextShark.x === 9 && nextShark.y === slot) {
+      return false;
+    }
+    if (foodStillOnScreen.some((food) => food.x === 9 && food.y === slot)) {
+      return false;
+    }
+    return true;
+  });
 }
 
 function newFood(availableSlots: number[] = allSlots): FoodState {

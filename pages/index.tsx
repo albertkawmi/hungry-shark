@@ -452,38 +452,20 @@ interface SealifeProps extends Coords {
 
 const Sealife: React.FC<SealifeProps> = ({ x, y, facing, type }) => (
   <React.Fragment>
-    {type !== 'eaten' ? (
-      <img
-        className={facing === 'right' ? 'pulsate-flipped' : 'pulsate'}
-        src={`/emoji/${type}.png`}
-        alt={type}
-        style={{
-          top: (y * getAppWidth()) / 10,
-          left: (x * getAppWidth()) / 10,
-        }}
-      />
-    ) : (
-      <span
-        style={{
-          top: (y * getAppWidth()) / 10,
-          left: (x * getAppWidth()) / 10,
-        }}
-      >
-        1
-      </span>
-    )}
-
+    <img
+      className={facing === 'right' ? 'pulsate-flipped' : 'pulsate'}
+      src={`/emoji/${type}.png`}
+      alt={type}
+      style={{
+        top: (y * getAppWidth()) / 10,
+        left: (x * getAppWidth()) / 10,
+      }}
+    />
     <style jsx>{`
       img {
         position: absolute;
         width: ${getWidthForType(type)}px;
         transition: top 200ms ease-out, left 200ms ease-out;
-      }
-      span {
-        position: absolute;
-        color: red;
-        font-weight: bold;
-        opacity: 0.8;
       }
     `}</style>
   </React.Fragment>
