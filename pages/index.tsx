@@ -16,12 +16,10 @@ import useHotkeys from 'use-hotkeys';
 
 const colors = {
   black: 'black',
-  brown: '#a5742b',
-  green: 'lightseagreen',
-  lightBlue: 'lightskyblue',
+  blue: '#006abc',
   lightBlueFaded: 'rgba(135, 206, 250, 0.25)',
   white: 'white',
-  yellow: 'gold',
+  yellow: 'lightskyblue',
 };
 
 const isServer = typeof window === 'undefined';
@@ -47,6 +45,8 @@ function getAppWidth() {
   return appWidth;
 }
 
+const bgImgUrl = '/reef-bg.jpg';
+
 export default () => {
   const [hasMounted, setHasMounted] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -63,6 +63,7 @@ export default () => {
   return (
     <React.Fragment>
       <Head>
+        <link rel="prefetch" href={bgImgUrl} />
         <meta charSet="utf-8" />
         <link rel="icon" href="/favicon.ico" />
         <meta
@@ -115,6 +116,9 @@ export default () => {
           margin: 0;
           padding: 0;
           background-color: ${colors.black};
+        }
+        button {
+          cursor: pointer;
         }
         .pulsate {
           transform: scale(1);
@@ -178,8 +182,8 @@ const Game: React.FC = () => {
           display: flex;
           flex-direction: column;
 
-          background-color: ${colors.lightBlue};
-          background-image: url(/reef-bg.jpg);
+          background-color: ${colors.yellow};
+          background-image: url(${bgImgUrl});
           background-position: bottom;
           background-size: cover;
         }
@@ -205,7 +209,7 @@ const SplashScreen: React.FC<{ visible: boolean }> = ({ visible }) => (
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background-color: ${colors.green};
+        background-color: ${colors.blue};
         transition: transform 250ms linear;
         z-index: 100;
       }
@@ -213,7 +217,7 @@ const SplashScreen: React.FC<{ visible: boolean }> = ({ visible }) => (
         transform: translateX(-100vw);
       }
       h1 {
-        color: ${colors.yellow};
+        color: ${colors.white};
         font-size: 3rem;
         text-align: center;
         text-shadow: 3px 3px ${colors.black};
@@ -221,7 +225,7 @@ const SplashScreen: React.FC<{ visible: boolean }> = ({ visible }) => (
         padding: 1rem;
       }
       .circle {
-        background: ${colors.lightBlue};
+        background: ${colors.yellow};
         border-radius: 50%;
         padding: 3rem;
         box-shadow: 8px 8px ${colors.black};
@@ -248,7 +252,7 @@ const Header: React.FC<GameState> = ({ score, timeRemaining }) => {
           margin: 0;
           font-size: 0.875rem;
           font-weight: bold;
-          text-shadow: 1px 1px ${colors.brown};
+          text-shadow: 1px 1px ${colors.yellow};
           color: ${colors.black};
         }
         .Header {
@@ -272,7 +276,9 @@ const GameGrid: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
   return (
     <main className="GameGrid">
       {!state.started && (
-        <button onClick={() => dispatch({ type: 'START' })}>Ready</button>
+        <span className="ready">
+          Tap the arrows or use your keyboard to chase those fish!
+        </span>
       )}
       <Shark {...state.shark} />
       {state.food.map((f: FoodState, i) => (
@@ -287,16 +293,18 @@ const GameGrid: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
           align-items: center;
           justify-content: center;
         }
-        button {
+        .ready {
+          opacity: 0.7;
           border: 0;
           background-color: ${colors.lightBlueFaded};
+          width: 50%;
           padding: 1rem;
+          border-radius: 8px;
           color: ${colors.white};
-          font-size: 1.5rem;
+          font-size: 1rem;
           font-weight: bold;
-          border-radius: 3px;
-          opacity: 0.8;
           text-shadow: 1px 1px ${colors.black};
+          text-align: center;
         }
       `}</style>
     </main>
@@ -328,11 +336,18 @@ const GameOver: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
 
   return (
     <div className="GameOver">
+      <img
+        className="shark pulsate"
+        src="/emoji/shark.png"
+        alt="Hungry Shark!"
+      />
       <h2>Time's up!</h2>
-      <p>You scored</p>
-      <p className="scored pulsate">{state.score}</p>
-      <p>Points</p>
-      {highScore > state.score ? (
+      <div className="row">
+        <p>You ate</p>
+        <p className="scored">{state.score}</p>
+        <p>fish!</p>
+      </div>
+      {highScore >= state.score ? (
         <h3>
           Your high score is <span className="high-score">{highScore}</span>
         </h3>
@@ -344,7 +359,7 @@ const GameOver: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
         onClick={() => dispatch({ type: 'INIT' })}
         disabled={!showButton}
       >
-        Still hungry?
+        Try again?
       </button>
       <style jsx>{`
         .GameOver {
@@ -357,18 +372,24 @@ const GameOver: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          background-color: ${colors.green};
+          background-color: ${colors.blue};
           transition: transform 250ms linear;
           z-index: 100;
         }
-        p,
-        h2,
-        h3 {
-          margin: 0;
+        .GameOver > * {
+          margin-bottom: 2rem;
+        }
+        .shark {
+          width: 5rem;
           margin-bottom: 1rem;
+        }
+        p {
+          color: ${colors.white};
+          text-shadow: 1px 1px ${colors.black};
         }
         h2,
         h3 {
+          margin: 0;
           color: ${colors.white};
           text-align: center;
         }
@@ -378,6 +399,13 @@ const GameOver: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
         }
         h3 {
           text-shadow: 1px 1px ${colors.black};
+        }
+        .row {
+          display: flex;
+          align-items: center;
+        }
+        .row > * {
+          padding: 0 0.5rem;
         }
         .scored {
           font-size: 4rem;
@@ -393,13 +421,13 @@ const GameOver: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
           border: 0;
           background-color: ${colors.yellow};
           padding: 1rem;
-          color: ${colors.green};
+          color: ${colors.white};
           box-shadow: 2px 2px ${colors.black};
           text-shadow: 1px 1px ${colors.black};
           font-size: 1.5rem;
           font-weight: bold;
-          border-radius: 3px;
-          transition: opacity 2s ease-in;
+          border-radius: 6px;
+          transition: opacity 250ms ease-in;
         }
         .visible {
           opacity: 1;
@@ -424,17 +452,38 @@ interface SealifeProps extends Coords {
 
 const Sealife: React.FC<SealifeProps> = ({ x, y, facing, type }) => (
   <React.Fragment>
-    <img
-      className={facing === 'right' ? 'pulsate-flipped' : 'pulsate'}
-      src={`/emoji/${type}.png`}
-      alt={type}
-      style={{ top: (y * getAppWidth()) / 10, left: (x * getAppWidth()) / 10 }}
-    />
+    {type !== 'eaten' ? (
+      <img
+        className={facing === 'right' ? 'pulsate-flipped' : 'pulsate'}
+        src={`/emoji/${type}.png`}
+        alt={type}
+        style={{
+          top: (y * getAppWidth()) / 10,
+          left: (x * getAppWidth()) / 10,
+        }}
+      />
+    ) : (
+      <span
+        style={{
+          top: (y * getAppWidth()) / 10,
+          left: (x * getAppWidth()) / 10,
+        }}
+      >
+        1
+      </span>
+    )}
+
     <style jsx>{`
       img {
         position: absolute;
         width: ${getWidthForType(type)}px;
         transition: top 200ms ease-out, left 200ms ease-out;
+      }
+      span {
+        position: absolute;
+        color: red;
+        font-weight: bold;
+        opacity: 0.8;
       }
     `}</style>
   </React.Fragment>

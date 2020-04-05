@@ -18,7 +18,8 @@ export type FoodType =
   | 'octopus'
   | 'shrimp'
   | 'squid'
-  | 'tropical-fish';
+  | 'tropical-fish'
+  | 'eaten';
 
 export interface FoodState extends Coords {
   id: string;
@@ -35,7 +36,7 @@ export interface GameState {
 
 export type MoveType = 'MOVE_UP' | 'MOVE_DOWN' | 'MOVE_LEFT' | 'MOVE_RIGHT';
 
-export type ActionType = 'INIT' | 'START' | 'TICK' | MoveType;
+export type ActionType = 'INIT' | 'TICK' | MoveType;
 
 export interface Action {
   type: ActionType;
@@ -78,10 +79,6 @@ function gameReducer(state: GameState, action: Action): GameState {
     return initialState;
   }
 
-  if (action.type === 'START') {
-    return { ...state, started: true };
-  }
-
   if (state.timeRemaining === 0) {
     return state;
   }
@@ -90,21 +87,23 @@ function gameReducer(state: GameState, action: Action): GameState {
 
   const movedFood = state.food
     .map(action.type === 'TICK' ? moveFoodToTheLeft : doNothing)
-    .filter(food => food.x >= 0);
+    .filter((food) => food.x >= 0);
 
   const survivingFood = movedFood.filter(
-    food => food.x !== nextShark.x || food.y !== nextShark.y
+    (food) => food.x !== nextShark.x || food.y !== nextShark.y
   );
 
   const nextFood = survivingFood.concat(
     survivingFood.length < 6
       ? [
           newFood(
-            allSlots.filter(slot => {
+            allSlots.filter((slot) => {
               if (nextShark.x === 9 && nextShark.y === slot) {
                 return false;
               }
-              if (survivingFood.some(food => food.x === 9 && food.y === slot)) {
+              if (
+                survivingFood.some((food) => food.x === 9 && food.y === slot)
+              ) {
                 return false;
               }
               return true;
@@ -180,7 +179,7 @@ function newFood(availableSlots: number[] = allSlots): FoodState {
   // only render a bottom dweller if there's a free slot
   const availableTypes = availableSlots.includes(9)
     ? sharkFoodKeys
-    : sharkFoodKeys.filter(foodType => !bottomDwellers.includes(foodType));
+    : sharkFoodKeys.filter((foodType) => !bottomDwellers.includes(foodType));
 
   // select one of the available types at random
   const type: FoodType = randomItem(availableTypes);
@@ -189,7 +188,7 @@ function newFood(availableSlots: number[] = allSlots): FoodState {
   const isBottomDweller = bottomDwellers.includes(type);
   const y = isBottomDweller
     ? 9
-    : randomItem(availableSlots.filter(slot => slot !== 9));
+    : randomItem(availableSlots.filter((slot) => slot !== 9));
 
   const id = `${type}-${Date.now()}`;
   const food: FoodState = { id, x: 9, y, type };
