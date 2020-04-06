@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
+import ReactGA from 'react-ga';
+
 import {
   useGameState,
   GameState,
@@ -58,6 +60,7 @@ export default () => {
     if (!hasLoaded) {
       setTimeout(() => setHasLoaded(true), 2000);
     }
+    initReactGA();
   }, []);
 
   return (
@@ -158,6 +161,13 @@ export default () => {
 
 const Game: React.FC = () => {
   const [state, dispatch] = useGameState() as [GameState, GameDispatch];
+
+  useEffect(() => {
+    gaEvent({
+      category: 'User',
+      action: 'Start a new game',
+    });
+  }, []);
 
   useInterval(() => {
     if (state.started) {
@@ -326,6 +336,13 @@ const GameOver: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
       } else {
         setHighScore(previousHighScore);
       }
+
+      // log score to GA
+      gaEvent({
+        category: 'User',
+        action: 'Game Over',
+        value: state.score,
+      });
     } catch (e) {
       console.error(e);
       setHighScore(0);
@@ -333,6 +350,14 @@ const GameOver: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
       setTimeout(() => setShowButton(true), 1000);
     }
   }, []);
+
+  const handleTryAgainClick = () => {
+    gaEvent({
+      category: 'User',
+      action: 'Try again',
+    });
+    dispatch({ type: 'INIT' });
+  };
 
   return (
     <div className="GameOver">
@@ -356,7 +381,7 @@ const GameOver: React.FC<StateAndDispatch> = ({ state, dispatch }) => {
       )}
       <button
         className={showButton ? 'visible' : 'hidden'}
-        onClick={() => dispatch({ type: 'INIT' })}
+        onClick={() => handleTryAgainClick()}
         disabled={!showButton}
       >
         Try again?
@@ -552,3 +577,27 @@ const DirectionPad: React.FC<StateAndDispatch> = ({ dispatch }) => {
     </nav>
   );
 };
+
+function initReactGA() {
+  if (isProdEnv()) {
+    ReactGA.initialize('UA-162876856-1');
+    ReactGA.pageview(window.location.pathname + window.location.search);
+  } else {
+    console.info('[Google Analytics] Initialised');
+  }
+}
+
+function gaEvent(event: ReactGA.EventArgs) {
+  if (isProdEnv()) {
+    ReactGA.event(event);
+  } else {
+    console.info('[Google Analytics] Event', event);
+  }
+}
+
+function isProdEnv() {
+  return (
+    typeof window !== undefined &&
+    window.location.host === 'hungry-shark.now.sh'
+  );
+}
