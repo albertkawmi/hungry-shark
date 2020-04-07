@@ -59,7 +59,7 @@ Emoji characters render quickly but they vary from device to device and it's har
 
 ### Importance of the React `key` prop
 
-Switching from emoji text to images caused everything to slow down and the images would visibly flash on every game tick. This was because the images were being rerenderd every time. By creating a unique ID for each creature and using this as the `key` prop, I prevented the characters from re-rendering unnecessarily.
+Switching from emoji text to images caused everything to slow down and the images would visibly flash on every game tick. This was because the images were being re-rendered every time. By creating a unique ID for each creature and using this as the `key` prop, I prevented the characters from re-rendering unnecessarily.
 
 The next optimisation would have been to use an image sprite (instead of multiple images) but this didn't feel necessary for this game.
 
@@ -69,7 +69,7 @@ The simplistic approach of a fixed grid of `div`s got us up-and-running very qui
 
 ### Mashing game controls on iOS Safari is not what it's intended for
 
-When furiously tapping the controls on a touch screen, the viewport can jump about, you can accidentally zoom in/out and it's just not very responsive. There are definitely better ways to controls a mobile game.
+When furiously tapping the controls on a touch screen, the viewport can jump about, you can accidentally zoom in/out and it's just not very responsive. There are definitely better ways to control a mobile game.
 
 These lines of CSS helped a bit and I would probably use them again:
 
