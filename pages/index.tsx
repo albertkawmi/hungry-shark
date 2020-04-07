@@ -61,6 +61,13 @@ export default () => {
       setTimeout(() => setHasLoaded(true), 2000);
     }
     initReactGA();
+
+    console.info(
+      '👋 Hey there! This game is open source. I worked on it with my daughter during COVID19 lockdown.'
+    );
+    console.info(
+      'You can read about it and view the code here https://github.com/albertkawmi/hungry-shark/blob/master/README.md'
+    );
   }, []);
 
   return (
