@@ -47,7 +47,9 @@ My daughter was very interested in the fact that her friends and family - and ev
 
 ## Wait, why is this a server-rendered React app?
 
-Just ignore that. This game started life in a Codesandbox. When we wanted to share it with friends and family, I just plonked it in a NextJS boilerplate because that's what I've been hacking with lately. We didn't care about the technology choice - we just wanted to create a simple game as quickly as possible.
+Just ignore that. This game started life in a [Codesandbox](https://codesandbox.io/s/hungry-shark-6h28v). When we wanted to share it with friends and family, I just plonked it in a [NextJS](https://nextjs.org/) boilerplate because that's what I've been hacking with lately. We didn't care about the technology choice - we just wanted to create a simple game as quickly as possible.
+
+It also meant that deploying this with [Zeit's now.sh](https://zeit.co/home) was a a one-line command.
 
 Next time we might try something more suitable for games (HTML5 canvas or some game framework.) Or we might just use what we know.
 
@@ -95,4 +97,4 @@ I did enjoy writing the logic as a React `useReducer` hook. These are pure funct
 
 ## Thanks for reading
 
-We hope you enjoy Hungry Shark!
+We hope you [enjoy Hungry Shark](https://hungry-shark.now.sh)!
